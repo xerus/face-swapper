@@ -27,6 +27,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     source_image, target_image = args.SOURCE_IMAGE, args.TARGET_IMAGE
 
+    one_image = target_image is None
+
     app = FaceAnalysis(name="buffalo_l")
 
     app.prepare(ctx_id=0, det_size=(640, 640))
@@ -36,7 +38,7 @@ if __name__ == "__main__":
 
     source_faces = get_faces(app, source_image)
 
-    if target_image is None:
+    if one_image:
         target_image = source_image.copy()
         target_faces = source_faces.copy()
     else:
@@ -45,7 +47,10 @@ if __name__ == "__main__":
     with tqdm(total=len(source_faces) * len(target_faces)) as pbar:
         for i, source_face in enumerate(source_faces):
             res = target_image.copy()
-            for face in target_faces:
+            for j, face in enumerate(target_faces):
+                if one_image and i == j:
+                    # avoid swapping source face if it is same as target
+                    continue
                 res = swapper.get(res, face, source_face, paste_back=True)
                 pbar.update()
             cv2.imwrite(f"{i:03}_swapped.jpg", res)
