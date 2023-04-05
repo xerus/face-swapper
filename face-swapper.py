@@ -29,7 +29,11 @@ if __name__ == "__main__":
 
     one_image = target_image is None
 
-    app = FaceAnalysis(name="buffalo_l")
+    app = FaceAnalysis(
+        name="buffalo_l",
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        allowed_modules=["detection", "recognition"],
+    )
 
     app.prepare(ctx_id=0, det_size=(640, 640))
     swapper = insightface.model_zoo.get_model(
@@ -44,7 +48,13 @@ if __name__ == "__main__":
     else:
         target_faces = get_faces(app, target_image)
 
-    with tqdm(total=len(source_faces) * len(target_faces)) as pbar:
+    swap_pairs = [
+        (i, j)
+        for i in range(len(source_faces))
+        for j in range(len(target_faces))
+        if not one_image or i != j
+    ]
+    with tqdm(total=len(swap_pairs)) as pbar:
         for i, source_face in enumerate(source_faces):
             res = target_image.copy()
             for j, face in enumerate(target_faces):
